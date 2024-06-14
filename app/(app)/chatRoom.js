@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { Component, useEffect, useState } from "react";
 import {
   Alert,
+  Animated,
+  Keyboard,
   Platform,
   Text,
   TextInput,
@@ -49,6 +51,7 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
   const textRef = useRef("");
   const inputRef = useRef(null);
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     createRoomIfNotExists();
@@ -59,13 +62,32 @@ export default function ChatRoom() {
     const q = query(messagesRef, orderBy("createdAt", "asc"));
 
     let unsub = onSnapshot(q, (snapshot) => {
-      let allMessages = snapshot.docs.map((doc) => (doc) => {
+      let allMessages = snapshot.docs.map((doc) => {
         return doc.data();
       });
       setMessages([...allMessages]);
     });
-    return unsub;
+
+    const KeyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      updateScrollView
+    );
+
+    return () => {
+      return unsub;
+      KeyboardDidShowListener.remove();
+    };
   }, []);
+
+  useEffect(() => {
+    updateScrollView();
+  }, [messages]);
+
+  const updateScrollView = () => {
+    setTimeout(() => {
+      scrollViewRef?.current?.scrollToEnd({ Animated: true });
+    }, 100);
+  };
 
   const createRoomIfNotExists = async () => {
     // Id room
@@ -93,13 +115,10 @@ export default function ChatRoom() {
         senderName: user?.username,
         createdAt: Timestamp.fromDate(new Date()),
       });
-
-      console.log("id da nova menssagem: ", newDoc.id);
     } catch (error) {
       Alert.alert("Message", error.message);
     }
   };
-
   return (
     <CustomKeyboardView inChat={true}>
       <View className="flex-1" style={{ backgroundColor: "#f0f0f0" }}>
@@ -192,7 +211,11 @@ export default function ChatRoom() {
         {/* Input de Menssagens */}
         <View className="flex-1 justify-between bg-neutral-100 overflow-visible">
           <View className="flex-1">
-            <MessageList messages={messages} />
+            <MessageList
+              scrollViewRef={scrollViewRef}
+              messages={messages}
+              currentUser={user}
+            />
           </View>
           <View
             style={{ marginBottom: hp(1.7), paddingTop: 2 }}
@@ -216,6 +239,7 @@ export default function ChatRoom() {
                   borderRadius: 100,
                   padding: 5,
                   margin: 1,
+                  width: wp(12),
                 }}
                 className="bg-neutral-600 p-2 mr-[1px] rounded-full"
               >

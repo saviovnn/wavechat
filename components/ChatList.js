@@ -3,7 +3,7 @@ import { FlatList, Text, View } from "react-native";
 import { ChatItem } from "./ChatItem";
 import { useRouter } from "expo-router";
 
-export default function ChatList({ users }) {
+export default function ChatList({ users, currentUser }) {
   const router = useRouter();
   return (
     <View className="flex-1">
@@ -13,7 +13,12 @@ export default function ChatList({ users }) {
         keyExtractor={(item) => Math.random}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
-          <ChatItem router={router} item={item} index={index} />
+          <ChatItem
+            router={router}
+            item={item}
+            currentUser={currentUser}
+            index={index}
+          />
         )}
       />
     </View>
